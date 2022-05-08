@@ -61,14 +61,18 @@ public:
         Reg32 br = Traits<UART>::CLOCK / (reg(DIV) + 1);
         Reg32 div = br >> 16;
         reg(DIV) = div;
+        reg(IE) = Reg32(4);
 
         reg(TXCTRL) = Reg32(0);
+        reg(RXCTRL) = Reg32(1);
     }
 
     void config(unsigned int * baud_rate, unsigned int * data_bits, unsigned int * parity, unsigned int * stop_bits) {
         *baud_rate = Traits<UART>::CLOCK / (reg(DIV) + 1);
-        *parity = (reg(LCR) & PARITY_MASK) >> PARITY_MASK
-        *stop_bits = (reg(LCR) & STOP_BITS_MASK) >> STOP_BITS_MASK + 1;
+        // *parity = (reg(LCR) & PARITY_MASK) >> PARITY_MASK
+        // *stop_bits = (reg(LCR) & STOP_BITS_MASK) >> STOP_BITS_MASK + 1;
+        *parity = 0;
+        *stop_bits = 0;
     }
 
     Reg32 rxd() {
@@ -87,11 +91,9 @@ public:
         return reg(TXDATA) & FULL_TXDATA;
     }
 
-    bool rxd_full() { return false; } //still not defined
+    bool rxd_full() { return !rxd_ok(); } //still not defined
 
-    bool txd_empty() {
-        return (reg(LSR) & TEMPTY_REG);
-    }
+    bool txd_empty() { return !txd_ok(); }
 
     bool busy() {
         return false; // not applicable
@@ -104,9 +106,8 @@ public:
     }
 
     void put(char c) {
-        while (txd_ok()) {
-            txd(c);
-        }
+        while (!txd_ok());
+        txd(c);
     }
 
     void flush() { while(!txd_empty()); }
