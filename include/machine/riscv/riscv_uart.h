@@ -33,18 +33,20 @@ private:
 
     // Useful bits from multiple registers
     enum {
-        DATA_READY          = 1 << 0,
-        THOLD_REG           = 1 << 5,
-        TEMPTY_REG          = 1 << 6,
-        DATA_BITS_MASK      = 1 << 1 | 1 << 0,
-        PARITY_MASK         = 1 << 3,
-        DLAB_ENABLE         = 1 << 7,
-        STOP_BITS_MASK      = 1 << 2,
-        LOOPBACK_MASK       = 1 << 4,
-        FIFO_ENABLE         = 1 << 0,
-        DEFAULT_DATA_BITS   = 5,
-        FULL_TXDATA         = 1 << 31,
-        EMPTY_RXDATA        = 1 << 31,
+        TXDATA_FULL     = 1 << 31,
+        TXCTRL_TXEN     = 0,
+        TXCTRL_NSTOP    = 1,
+        TXCTRL_TXCNT    = 16,
+
+        RXDATA_EMPTY    = 1 << 31,
+        RXCTRL_RXEN     = 0,
+        RXCTRL_RXCNT    = 16,
+
+        IP_TXWM         = 0,
+        IP_RXWM         = 1,
+
+        IE_TXWM         = 0,
+        IE_RXWM         = 1,
     };
 
 public:
@@ -63,16 +65,27 @@ public:
         reg(DIV) = div;
         reg(IE) = Reg32(4);
 
-        reg(TXCTRL) = Reg32(0);
-        reg(RXCTRL) = Reg32(1);
+        if (stop_bits == 1)
+        {
+            reg(TXCTRL) &= ~(1 << TXCTRL_NSTOP);
+        } else if (stop_bits == 2)
+        {
+            reg(TXCTRL) |= (1 << TXCTRL_NSTOP);
+        }
+
+        reg(TXCTRL) |= (1 << TXCTRL_TXEN);
+        reg(RXCTRL) |= (1 << RXCTRL_RXEN);
     }
 
     void config(unsigned int * baud_rate, unsigned int * data_bits, unsigned int * parity, unsigned int * stop_bits) {
         *baud_rate = Traits<UART>::CLOCK / (reg(DIV) + 1);
-        // *parity = (reg(LCR) & PARITY_MASK) >> PARITY_MASK
-        // *stop_bits = (reg(LCR) & STOP_BITS_MASK) >> STOP_BITS_MASK + 1;
-        *parity = 0;
-        *stop_bits = 0;
+        
+        if (reg(TXCTRL) & TXCTRL_NSTOP) {
+            *stop_bits = 2;
+        } else {
+            *stop_bits = 1;
+        }
+
     }
 
     Reg32 rxd() {
@@ -83,36 +96,38 @@ public:
         reg(TXDATA) = c;
     }
 
-    bool rxd_ok() {
-        return reg(RXDATA) & EMPTY_RXDATA;
+    bool rxd_empty() {
+        return reg(RXDATA) & RXDATA_EMPTY;
     }
 
-    bool txd_ok() {
-        return reg(TXDATA) & FULL_TXDATA;
+    bool txd_full() {
+        return reg(TXDATA) & TXDATA_FULL;
     }
 
-    bool rxd_full() { return !rxd_ok(); } //still not defined
+    bool rxd_full() { return false; } //still not defined
 
-    bool txd_empty() { return !txd_ok(); }
+    bool txd_empty() 
+    {
+        return (reg(IP) & (1 << IP_TXWM));
+    }
 
     bool busy() {
         return false; // not applicable
     }
 
     char get() {
-        while (rxd_ok()) {
-            return rxd();
-        }
+        while (!ready_to_get());
+        return rxd();
     }
 
     void put(char c) {
-        while (!txd_ok());
+        while (!txd_full());
         txd(c);
     }
 
     void flush() { while(!txd_empty()); }
-    bool ready_to_get() { return rxd_ok(); }
-    bool ready_to_put() { return txd_ok(); }
+    bool ready_to_get() { return !rxd_empty(); }
+    bool ready_to_put() { return !txd_full(); }
 
     void reset() {
         // Reconfiguring the UART implicitly resets it
