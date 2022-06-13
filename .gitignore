@@ -11,3 +11,5 @@ eposmkbi
 # Generated apps
 app/philosophers_dinner/philosophers_dinner
 img/philosophers_dinner
+app/p1_scheduler_test/p1_scheduler_test
+img/p1_scheduler_test
