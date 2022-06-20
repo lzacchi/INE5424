@@ -80,7 +80,8 @@ private:
     static volatile CPU::Reg64 & reg(unsigned int o) { return reinterpret_cast<volatile CPU::Reg64 *>(Memory_Map::CLINT_BASE)[o / sizeof(CPU::Reg64)]; }
 
     static void config(const Hertz & frequency) {
-        reg(MTIMECMP) = reg(MTIME) + (CLOCK / frequency);
+        int mtimecmp_offset = CPU::id() * MTIMECMP_CORE_OFFSET;
+        reg(MTIMECMP + mtimecmp_offset) = reg(MTIME) + (CLOCK / frequency);
     }
 
     static void int_handler(Interrupt_Id i);
