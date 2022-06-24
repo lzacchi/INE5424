@@ -11,14 +11,14 @@ int main()
 {
     cout << "===== P2 multicore preparation tests =====" << endl;
     cout << endl;
-    
+
     cout << "Testing CPU::id:" << endl;
     cout << CPU::id() << endl;
     cout << "Testing CPU::cores:" << endl;
-    cout << CPU::cores() << endl; // TODO
-    
+    cout << CPU::cores() << endl;
+
     cout << endl;
-    
+
     cout << "=== Timer tests ===" << endl;
     cout << endl;
     cout << "Testing Timer::config calculating mtimecmp offsets" << endl;
@@ -30,8 +30,8 @@ int main()
     cout << "New mtimecmp is: " << new_mtimecmp_value << endl;
     cout << "New value of mtimecmp must be larger than before" << endl;
     assert(new_mtimecmp_value > mtimecmp_value + offset);
-    
+
     cout << endl;
-    
+
     return 0;
 }
