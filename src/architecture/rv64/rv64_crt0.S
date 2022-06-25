@@ -9,7 +9,7 @@
 _start:
         // Temporary stack(s) for INIT were created and configure by SETUP
         // BSS was cleared by SETUP
-        call      _init
+        call      _init  // src/architecture/common/crtend.c
 
         .align  8
         .globl  __epos_app_entry

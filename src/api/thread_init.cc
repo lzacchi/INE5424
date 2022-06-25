@@ -15,15 +15,15 @@ void Thread::init()
 
     Criterion::init();
 
-    typedef int (Main)();
-
-    // If EPOS is a library, then adjust the application entry point to __epos_app_entry, which will directly call main().
-    // In this case, _init will have already been called, before Init_Application to construct MAIN's global objects.
-    Main * main = reinterpret_cast<Main *>(__epos_app_entry);
-
     Thread::State idle_state = Thread::RUNNING;
+
     if (CPU::id() == 0) {
         idle_state = Thread::READY;
+
+        typedef int (Main)();
+        // If EPOS is a library, then adjust the application entry point to __epos_app_entry, which will directly call main().
+        // In this case, _init will have already been called, before Init_Application to construct MAIN's global objects.
+        Main * main = reinterpret_cast<Main *>(__epos_app_entry);
         new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
     }
 

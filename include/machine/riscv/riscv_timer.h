@@ -78,9 +78,8 @@ public:
 
     void handler(const Handler & handler) { _handler = handler; }
 
-    static volatile CPU::Reg64 & reg(unsigned long o) {
-        auto clint = reinterpret_cast<volatile CPU::Reg32 *>(Memory_Map::CLINT_BASE);
-        return *reinterpret_cast<volatile CPU::Reg64 *>(clint[o / sizeof(CPU::Reg32)]); 
+    static volatile CPU::Reg32 & reg(unsigned long o) {
+        return reinterpret_cast<volatile CPU::Reg32 *>(Memory_Map::CLINT_BASE)[o / sizeof(CPU::Reg32)];
     }
 
     static void config(const Hertz & frequency) {

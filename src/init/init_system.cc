@@ -15,16 +15,17 @@ private:
 
 public:
     Init_System() {
+        CPU::smp_barrier();
+
         if (CPU::id() == 0) {
             db<Init>(TRC) << "Init_System()" << endl;
 
             db<Init>(INF) << "Init:si=" << *System::info() << endl;
 
             db<Init>(INF) << "Initializing the architecture: " << endl;
-        }
-        CPU::init();
 
-        if (CPU::id() == 0) {
+            CPU::init();
+
             db<Init>(INF) << "Initializing system's heap: " << endl;
             if(Traits<System>::multiheap) {
                 System::_heap_segment = new (&System::_preheap[0]) Segment(HEAP_SIZE, Segment::Flags::SYS);
@@ -38,12 +39,14 @@ public:
                 System::_heap = new (&System::_preheap[sizeof(Segment)]) Heap(heap, System::_heap_segment->size());
             } else
                 System::_heap = new (&System::_preheap[0]) Heap(MMU::alloc(MMU::pages(HEAP_SIZE)), HEAP_SIZE);
-
-            db<Init>(INF) << "Initializing the machine: " << endl;
-            Machine::init();
-
-            db<Init>(INF) << "Initializing system abstractions: " << endl;
         }
+
+        CPU::smp_barrier();
+
+        db<Init>(INF) << "Initializing the machine: " << endl;
+        Machine::init();
+
+        db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();
 
         // Randomize the Random Numbers Generator's seed

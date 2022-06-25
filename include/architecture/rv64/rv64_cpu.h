@@ -214,7 +214,7 @@ public:
     static Reg fr() { Reg r; ASM("mv %0, a0" :  "=r"(r)); return r; }
     static void fr(Reg r) {  ASM("mv a0, %0" : : "r"(r) :); }
 
-    static unsigned int id() { 
+    static unsigned int id() {
         return mhartid();
     }
 
@@ -278,7 +278,9 @@ public:
         return old;
     }
 
-    static void smp_barrier(unsigned long cores = CPU::cores()) {}
+    static void smp_barrier(unsigned long cores = CPU::cores()) {
+        CPU_Common::smp_barrier<finc>(cores, id());
+    }
 
     static void flush_tlb() {         ASM("sfence.vma"    : :           : "memory"); }
     static void flush_tlb(Reg addr) { ASM("sfence.vma %0" : : "r"(addr) : "memory"); }
@@ -334,7 +336,7 @@ public:
     static void mint_enable()  { ASM("csrsi mstatus, %0" : : "i"(MIE) : "cc"); }
     static void mint_disable() { ASM("csrci mstatus, %0" : : "i"(MIE) : "cc"); }
 
-    static Reg mhartid() { Reg r; ASM("csrr %0, mhartid" : "=r"(r) : : "memory", "cc"); return r & 0x3; }
+    static Reg mhartid() { Reg r; ASM("csrr %0, mhartid" : "=r"(r) : : "memory", "cc"); return r & 0b111; }
 
     static void mscratch(Reg r)   { ASM("csrw mscratch, %0" : : "r"(r) : "cc"); }
     static Reg  mscratch() { Reg r; ASM("csrr %0, mscratch" :  "=r"(r) : : ); return r; }

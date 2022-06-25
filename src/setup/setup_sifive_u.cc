@@ -116,7 +116,7 @@ void Setup::say_hi()
 void Setup::call_next()
 {
     // Check for next stage and obtain the entry point
-    Log_Addr pc = &_start;
+    Log_Addr pc = &_start; // src/architecture/rv64/rv64_crt0.S
 
     db<Setup>(INF) << "SETUP ends here!" << endl;
 
@@ -133,15 +133,20 @@ using namespace EPOS::S;
 
 void _entry() // machine mode
 {
-    if(CPU::mhartid() != 0)                             // SiFive-U requires 2 cores, so we disable core 1 here
-        CPU::halt();
-
     CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
     CPU::mies(CPU::MSI);                                // enable interrupts at CLINT so IPI and timer can be triggered
     CLINT::mtvec(CLINT::DIRECT, _int_entry);            // setup a preliminary machine mode interrupt handler pointing it to _int_entry
 
-    CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE * (CPU::mhartid() + 1) - sizeof(long));
-    Machine::clear_bss();
+    // (0x87ffffff + 0x1 - (64 * 1024)) * (id + 1)
+    CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE * (CPU::id() + 1) - sizeof(long));
+
+    volatile static int done_clearing_bss = 0;
+    if(CPU::id() == 0) {
+        Machine::clear_bss();
+        done_clearing_bss = 1;
+    } else {
+        while (!done_clearing_bss) {}
+    }
 
     CPU::mstatus(CPU::MPP_M);                           // stay in machine mode at mret
 
