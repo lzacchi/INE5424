@@ -14,6 +14,7 @@ __BEGIN_SYS
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
+Spin Thread::_lock;
 
 
 void Thread::constructor_prologue(unsigned int stack_size)
@@ -313,6 +314,25 @@ void Thread::reschedule()
     dispatch(prev, next);
 }
 
+void Thread::reschedule(unsigned int cpu)
+{
+    assert(locked()); // locking handled by caller
+
+    if(!Traits<Thread>::smp || (cpu == CPU::id()))
+        reschedule();
+    else {
+        db<Thread>(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
+        IC::ipi(cpu, IC::INT_RESCHEDULER);
+    }
+}
+
+
+void Thread::rescheduler(IC::Interrupt_Id i)
+{
+    lock();
+    reschedule();
+    unlock();
+}
 
 void Thread::time_slicer(IC::Interrupt_Id i)
 {
@@ -343,6 +363,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
         db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        if(Traits<Thread>::smp) {
+            _lock.release();
+        }
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and
@@ -350,6 +373,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
+        if(Traits<Thread>::smp) {
+            _lock.acquire();
+        }
     }
 }
 

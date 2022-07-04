@@ -132,6 +132,18 @@ public:
     RR(int p = NORMAL, Tn & ... an): Priority(p) {}
 };
 
+// Global Round-Robin
+class GRR: public Priority {
+public:
+    static const bool timed = true;
+    static const bool dynamic = false;
+    static const bool preemptive = true;
+
+public:
+    template <typename ... Tn>
+    GRR(int p = NORMAL, Tn & ... an): Priority(p) {}
+};
+
 // First-Come, First-Served (FIFO)
 class FCFS: public Priority
 {
