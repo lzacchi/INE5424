@@ -106,11 +106,26 @@ void Thread::priority(const Criterion & c)
         _scheduler.remove(this);
         _link.rank(c);
         _scheduler.insert(this);
-    } else
+    } else {
         _link.rank(c);
+    }
 
-    if(preemptive)
-        reschedule();
+    unsigned int old_cpu = _link.rank().queue();
+    unsigned int new_cpu = c.queue();
+
+    if(preemptive) {
+        if (smp) {
+            if(old_cpu != CPU::id()) {
+                reschedule(old_cpu);
+            }
+            if(new_cpu != CPU::id()) {
+                reschedule(new_cpu);
+            }
+        } else {
+            reschedule();
+        }
+
+    }
 
     unlock();
 }
@@ -326,7 +341,6 @@ void Thread::reschedule(unsigned int cpu)
     }
 }
 
-
 void Thread::rescheduler(IC::Interrupt_Id i)
 {
     lock();
@@ -340,7 +354,6 @@ void Thread::time_slicer(IC::Interrupt_Id i)
     reschedule();
     unlock();
 }
-
 
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
@@ -378,7 +391,6 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         }
     }
 }
-
 
 int Thread::idle()
 {
