@@ -208,8 +208,9 @@ void Thread::resume()
         _state = READY;
         _scheduler.resume(this);
 
-        if(preemptive)
-            reschedule();
+        if (preemptive) {
+            reschedule(_link.rank().queue());
+        }
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
 
@@ -290,8 +291,9 @@ void Thread::wakeup(Queue * q)
         t->_waiting = 0;
         _scheduler.resume(t);
 
-        if(preemptive)
-            reschedule();
+        if (preemptive) {
+            reschedule(t->_link.rank().queue());
+        }
     }
 }
 
@@ -303,15 +305,21 @@ void Thread::wakeup_all(Queue * q)
     assert(locked()); // locking handled by caller
 
     if(!q->empty()) {
+        unsigned int cpus = 0;
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
             t->_waiting = 0;
             _scheduler.resume(t);
+            cpus |= 1 << t->_link.rank().queue();
         }
 
-        if(preemptive)
-            reschedule();
+        if (preemptive)
+            for (unsigned int i = 0; i < Criterion::QUEUES; i++) {
+                if (cpus & (1 << i)) {
+                    reschedule(i);
+                }
+            }
     }
 }
 
@@ -333,9 +341,9 @@ void Thread::reschedule(unsigned int cpu)
 {
     assert(locked()); // locking handled by caller
 
-    if(!Traits<Thread>::smp || (cpu == CPU::id()))
+    if (!Traits<Thread>::smp || (cpu == CPU::id())) {
         reschedule();
-    else {
+    } else {
         db<Thread>(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
         IC::ipi(cpu, IC::INT_RESCHEDULER);
     }
@@ -357,10 +365,34 @@ void Thread::time_slicer(IC::Interrupt_Id i)
 
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
+    // assert(locked());
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
 
     if(charge) {
         if (Criterion::timed) {
+            if (EQUAL<Criterion, CFS>::Result) {
+                // TODO: move constants somewhere else
+                unsigned int TARGET_LATENCY_MS = 2 * QUANTUM;
+                unsigned int MINIMUM_GRANULARITY_MS = 20;
+
+                unsigned int ready_threads = _scheduler.schedulables() + 1;
+                unsigned int slice = TARGET_LATENCY_MS / ready_threads;
+                
+                if (next->criterion() != IDLE) {
+                    // the priority is multiplied to prevent lower/normal priority threads
+                    // from converging to minimum granularity after calculating the
+                    // slice multiplier
+                    slice = slice * 10;
+                    slice = slice / next->criterion()._priority + 10;
+                }
+
+                if (slice < MINIMUM_GRANULARITY_MS) {
+                    slice = MINIMUM_GRANULARITY_MS;
+                }
+
+                _timer->frequency(1000 / slice);
+            }
+            
             _timer->restart();
         }
 

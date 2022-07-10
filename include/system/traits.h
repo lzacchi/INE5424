@@ -101,7 +101,7 @@ class RT_Thread;
 class Task;
 class Priority;
 class FCFS;
-class CFSLike;
+class CFS;
 class RR;
 class RM;
 class DM;

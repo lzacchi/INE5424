@@ -11,7 +11,7 @@
 #define ARCH rv64
 #define MACH riscv
 #define MMOD sifive_u
-#define APPL hello
+#define APPL producer_consumer
 #define __library__
 #define __rv64__
 #define __riscv__

@@ -158,14 +158,14 @@ public:
 };
 
 // Completely Fair Scheduler
-class CFSLike: public Priority
+class CFS: public Priority
 {
 public:
     enum : int {
         MAIN   = 1,
         HIGH   = 2,
-        NORMAL = 4,
-        LOW    = 8,
+        NORMAL = 3,
+        LOW    = 4,
         IDLE   = (unsigned(1) << (sizeof(int) * 8 - 1)) - 1,
     };
 
@@ -182,9 +182,12 @@ public:
         TSC::Time_Stamp last_thread_dispatch;
     };
 
+    static const unsigned int HEADS = Traits<Machine>::CPUS;
+    static unsigned int current_head() { return CPU::id(); }
+
 public:
     template <typename ... Tn>
-    CFSLike(int p = NORMAL, Tn & ... an): Priority(p) {}
+    CFS(int p = NORMAL, Tn & ... an): Priority(p) {}
 
     bool collect(bool end = false) {
         _statistics.last_thread_dispatch = TSC::time_stamp();
@@ -204,9 +207,9 @@ public:
         if (_priority == IDLE) {
             return IDLE;
         }
-        unsigned int hw_ticks_per_sw_ticks = TSC::frequency() / Traits<Timer>::FREQUENCY;
-        unsigned int ticks = _statistics.thread_execution_time / hw_ticks_per_sw_ticks;
-        return ticks * _priority;
+        unsigned int hw_time_per_tick = TSC::frequency() / Traits<Timer>::FREQUENCY;
+        unsigned int ticks = _statistics.thread_execution_time / hw_time_per_tick;
+        return ticks * _priority;  // vruntime
     }
 
 protected:
@@ -214,5 +217,14 @@ protected:
 };
 
 __END_SYS
+
+__BEGIN_UTIL
+
+// template<typename T, typename R = typename T::Criterion>
+// class Scheduling_Queue: public Scheduling_List<T> {};
+template<typename T>
+class Scheduling_Queue<T, CFS>: public Multihead_Scheduling_List<T> {};
+
+__END_UTIL
 
 #endif
