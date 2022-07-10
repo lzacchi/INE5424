@@ -6,8 +6,7 @@
 __BEGIN_SYS
 
 // Build
-template <>
-struct Traits<Build> : public Traits_Tokens
+template <> struct Traits<Build> : public Traits_Tokens
 {
     // Basic configuration
     static const unsigned int MODE = LIBRARY;
@@ -29,8 +28,7 @@ struct Traits<Build> : public Traits_Tokens
 };
 
 // Utilities
-template <>
-struct Traits<Debug> : public Traits<Build>
+template <> struct Traits<Debug> : public Traits<Build>
 {
     static const bool error = true;
     static const bool warning = true;
@@ -38,26 +36,22 @@ struct Traits<Debug> : public Traits<Build>
     static const bool trace = false;
 };
 
-template <>
-struct Traits<Lists> : public Traits<Build>
+template <> struct Traits<Lists> : public Traits<Build>
 {
     static const bool debugged = hysterically_debugged;
 };
 
-template <>
-struct Traits<Spin> : public Traits<Build>
+template <> struct Traits<Spin> : public Traits<Build>
 {
     static const bool debugged = hysterically_debugged;
 };
 
-template <>
-struct Traits<Heaps> : public Traits<Build>
+template <> struct Traits<Heaps> : public Traits<Build>
 {
     static const bool debugged = hysterically_debugged;
 };
 
-template <>
-struct Traits<Observers> : public Traits<Build>
+template <> struct Traits<Observers> : public Traits<Build>
 {
     // Some observed objects are created before initializing the Display
     // Enabling debug may cause trouble in some Machines
@@ -65,28 +59,23 @@ struct Traits<Observers> : public Traits<Build>
 };
 
 // System Parts (mostly to fine control debugging)
-template <>
-struct Traits<Boot> : public Traits<Build>
+template <> struct Traits<Boot> : public Traits<Build>
 {
 };
 
-template <>
-struct Traits<Setup> : public Traits<Build>
+template <> struct Traits<Setup> : public Traits<Build>
 {
 };
 
-template <>
-struct Traits<Init> : public Traits<Build>
+template <> struct Traits<Init> : public Traits<Build>
 {
 };
 
-template <>
-struct Traits<Framework> : public Traits<Build>
+template <> struct Traits<Framework> : public Traits<Build>
 {
 };
 
-template <>
-struct Traits<Aspect> : public Traits<Build>
+template <> struct Traits<Aspect> : public Traits<Build>
 {
     static const bool debugged = hysterically_debugged;
 };
@@ -100,16 +89,14 @@ __END_SYS
 __BEGIN_SYS
 
 // API Components
-template <>
-struct Traits<Application> : public Traits<Build>
+template <> struct Traits<Application> : public Traits<Build>
 {
     static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
     static const unsigned int HEAP_SIZE = Traits<Machine>::HEAP_SIZE;
     static const unsigned int MAX_THREADS = Traits<Machine>::MAX_THREADS;
 };
 
-template <>
-struct Traits<System> : public Traits<Build>
+template <> struct Traits<System> : public Traits<Build>
 {
     static const unsigned int mode = Traits<Build>::MODE;
     static const bool multithread = (Traits<Build>::CPUS > 1) || (Traits<Application>::MAX_THREADS > 1);
@@ -125,8 +112,7 @@ struct Traits<System> : public Traits<Build>
     static const unsigned int HEAP_SIZE = (Traits<Application>::MAX_THREADS + 1) * Traits<Application>::STACK_SIZE;
 };
 
-template <>
-struct Traits<Thread> : public Traits<Build>
+template <> struct Traits<Thread> : public Traits<Build>
 {
     static const bool enabled = Traits<System>::multithread;
     static const bool smp = Traits<System>::multicore;
@@ -137,36 +123,30 @@ struct Traits<Thread> : public Traits<Build>
     typedef GRR Criterion;
 };
 
-template <>
-struct Traits<Scheduler<Thread>> : public Traits<Build>
+template <> struct Traits<Scheduler<Thread>> : public Traits<Build>
 {
     static const bool debugged = Traits<Thread>::trace_idle || hysterically_debugged;
 };
 
-template <>
-struct Traits<Synchronizer> : public Traits<Build>
+template <> struct Traits<Synchronizer> : public Traits<Build>
 {
     static const bool enabled = Traits<System>::multithread;
 };
 
-template <>
-struct Traits<Alarm> : public Traits<Build>
+template <> struct Traits<Alarm> : public Traits<Build>
 {
     static const bool visible = hysterically_debugged;
 };
 
-template <>
-struct Traits<Address_Space> : public Traits<Build>
+template <> struct Traits<Address_Space> : public Traits<Build>
 {
 };
 
-template <>
-struct Traits<Segment> : public Traits<Build>
+template <> struct Traits<Segment> : public Traits<Build>
 {
 };
 
-template <>
-struct Traits<Monitor> : public Traits<Build>
+template <> struct Traits<Monitor> : public Traits<Build>
 {
     static const bool enabled = monitored;
 
