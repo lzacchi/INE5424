@@ -123,6 +123,8 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
     static const unsigned int QUANTUM = 100000; // us
+    static const unsigned int TARGET_LATENCY = 2 * QUANTUM; // ms
+    static const unsigned int MINIMUM_GRANULARITY = 20; // ms
 
     typedef CFS Criterion;
 };

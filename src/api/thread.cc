@@ -371,28 +371,23 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     if(charge) {
         if (Criterion::timed) {
             if (EQUAL<Criterion, CFS>::Result) {
-                // TODO: move constants somewhere else
-                unsigned int TARGET_LATENCY_MS = 2 * QUANTUM;
-                unsigned int MINIMUM_GRANULARITY_MS = 20;
-
                 unsigned int ready_threads = _scheduler.schedulables() + 1;
-                unsigned int slice = TARGET_LATENCY_MS / ready_threads;
-                
+                unsigned int slice = TARGET_LATENCY / ready_threads;
+
                 if (next->criterion() != IDLE) {
                     // the priority is multiplied to prevent lower/normal priority threads
-                    // from converging to minimum granularity after calculating the
-                    // slice multiplier
+                    // from converging to minimum granularity after calculating the slice
                     slice = slice * 10;
                     slice = slice / next->criterion()._priority + 10;
                 }
 
-                if (slice < MINIMUM_GRANULARITY_MS) {
-                    slice = MINIMUM_GRANULARITY_MS;
+                if (slice < MINIMUM_GRANULARITY) {
+                    slice = MINIMUM_GRANULARITY;
                 }
 
                 _timer->frequency(1000 / slice);
             }
-            
+
             _timer->restart();
         }
 

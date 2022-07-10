@@ -35,6 +35,8 @@ protected:
     static const bool reboot = Traits<System>::reboot;
 
     static const unsigned int QUANTUM = Traits<Thread>::QUANTUM;
+    static const unsigned int TARGET_LATENCY = Traits<Thread>::TARGET_LATENCY;
+    static const unsigned int MINIMUM_GRANULARITY = Traits<Thread>::MINIMUM_GRANULARITY;
     static const unsigned int STACK_SIZE = Traits<Application>::STACK_SIZE;
 
     typedef CPU::Log_Addr Log_Addr;
